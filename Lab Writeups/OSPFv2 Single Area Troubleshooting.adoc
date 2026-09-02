@@ -1,1 +1,14 @@
+# CCNP ENARSI: Single Area OSPF Troubleshooting Lab
+## 2026-09-01
 
+
+In order to increase my lab time I've begun asking Claude to generate .yaml files with different troubleshooting scenarios. +
+This one was generated with the IOL image definition and is a single-area OSPF troubleshooting lab. +
+I will explain my thoughts while I was completing this lab and go router-by-router until everything is resolved.
+
+## R1 <> R2 Adjacency
+
+Starting with router R1, I begun by issuing the commands _"show ip protocols"_ and _"show running config | begin router ospf"_. +
+Along with a typical _"show ip int br"_ and _"show ip ospf neighbor"_ this allowed me to confirm that while the configurations were all correct on R1, the adjacency with R2 still wasn't forming.
+
+image::/Lab Writeups/images/OSPFv2 Single Area/R1_IP_PROTOCOLS.png[]
