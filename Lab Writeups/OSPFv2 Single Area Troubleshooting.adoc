@@ -1,1 +1,77 @@
+# CCNP ENARSI: Single Area OSPF Troubleshooting Lab
+## 2026-09-01
 
+
+In order to increase my lab time I've begun asking Claude to generate .yaml files with different troubleshooting scenarios. +
+This one was generated with the IOL image definition and is a single-area OSPF troubleshooting lab. +
+The topology is single connections between routers in the shape of a hexagon. + 
+I will explain my thoughts while I was completing this lab and go router-by-router until everything is resolved. +
+<<FINAL THOUGHTS>>
+
+## R1 <> R2 Adjacency
+
+Starting with router R1, I begun by issuing the commands _"show ip protocols"_ and _"show running config | begin router ospf"_. +
+Along with a typical _"show ip int br"_ and _"show ip ospf neighbor"_ this allowed me to confirm that while the configurations were all correct on R1 (for this connection), the adjacency with R2 still wasn't forming.
+
+image::Images/OSPFv2%20Single%20Area/R1_IP_PROTOCOLS.png[]
+image::Images/OSPFv2%20Single%20Area/R1_RUNNING_CONF.png[]
+
+{blank} +
+
+Logging into R2, I immediately received an area mismatch error: +
+
+image::Images/OSPFv2%20Single%20Area/R2_OSPF_ERROR.png[]
+
+{blank} +
+
+The configuration showed that the 172.16.12.0/30 network was configured on R2 for *area 5* instead of *area 0*. Swapping this configuration over to the proper area brought up the adjacency immediately. +
+
+image::Images/OSPFv2%20Single%20Area/R1_R2_ADJACENCY_FORMED.png[]
+
+## R1 <> R6 Adjacency
+
+I noticed that the third octet in the IP addressing for this lab contains the router numbers. So 172.16.12.0 is for R1 and R2, and the R1 <> R6 connection _should_ be 172.16.61.0. +
+If you look back at the previous seciton, R1's configuration had the incorrect network and IP address configured on this connection, and neighboring routers must share a common subnet in order to form a full adjacency. +
+
+A quick few changes on R1 brings up the adjacency: +
+
+image::Images/OSPFv2%20Single%20Area/R1_R6_ADJACENCY.png[]
+
+{blank} +
+And with that, R1 now has full adjacencies with both of its neighbors.
+
+## R2 <> R3 Adjacency
+No errors on this connection. Adjacency came up a minute or two after turning the nodes on.
+
+## R3 <> R4 Adjacency
+This connection did _not_ come up immediately, so I gathered information from R3. +
+All interfaces were up, the OSPF configuration was correct, and the network type was set to broadcast (the default on ethernet interfaces). +
+
+I turned my attention to R4, and noticed that the link to R3 had been configured as point-to-multipoint. Unfortunately, this is not a DMVPN lab, so I changed the network type back to broadcast and the adjacency came up: +
+
+image::Images/OSPFv2%20Single%20Area/R4_SOLUTION.png[]
+
+## R4 <> R5 Adjacency
+No errors on this connection. Adjacency came up in a minute or two after turning the nodes on.
+
+## R5 <> R6 Adjacency
+Initially, R5 did not seem to be configured incorrectly. Timers were the default broadcast timers, the OSPF configuration on the device seemed correct, and the interface was online. +
+Without looking back at R6, I ran _"debug ip ospf packet"_ on R5 to see if there was anything in the packet that would stand out. +
+Sure enough, the packets received inbound from R6 had _auth:2 keyid:1_ in them, meaning R6 had MD5 authentication configured on the interface.
+
+image::Images/OSPFv2%20Single%20Area/R5_DEBUG_AUTHENTICATION.png[]
+
+{blank} +
+Logging into R6 and checking the running configuration showed the config lines _"ip ospf message-digest-key 1 mdf cisco123"_ (designating a key), and _"ip ospf authentication message-digest"_ (telling OSPF which algorithm to use). +
+I added those same lines to R5, and our last adjacency was formed.
+
+image::Images/OSPFv2%20Single%20Area/R5_RESOLUTION.png[]
+
+## FINAL THOUGHTS
+This was a good first try for a claude-generated troubleshooting lab. I find it difficult in network labs to "break" them on my own so this is a handy tool in the toolkit for getting my troubleshooting thought processes in order. +
+
+In doing this lab, I solidified what I already knew about OSPF adjacencies: +
+1. Areas must match +
+2. Neighbors must share a common subnet to form an adjacency +
+3. Network types must match to form an adjacency +
+4. Authentication must match on both sides to form an adjacency +
