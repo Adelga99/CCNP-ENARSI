@@ -9,6 +9,25 @@ I will explain my thoughts while I was completing this lab and go router-by-rout
 ## R1 <> R2 Adjacency
 
 Starting with router R1, I begun by issuing the commands _"show ip protocols"_ and _"show running config | begin router ospf"_. +
-Along with a typical _"show ip int br"_ and _"show ip ospf neighbor"_ this allowed me to confirm that while the configurations were all correct on R1, the adjacency with R2 still wasn't forming.
+Along with a typical _"show ip int br"_ and _"show ip ospf neighbor"_ this allowed me to confirm that while the configurations were all correct on R1 (for this connection), the adjacency with R2 still wasn't forming.
 
-image::Lab%20Writeups/images/OSPFv2%20Single%20Area/R1_IP_PROTOCOLS.png[]
+image::Images/OSPFv2%20Single%20Area/R1_IP_PROTOCOLS.png[]
+image::Images/OSPFv2%20Single%20Area/R1_RUNNING_CONF.png[]
+
+{blank} +
+
+Logging into R2, I immediately received an area mismatch error: +
+
+image::Images/OSPFv2%20Single%20Area/R2_OSPF_ERROR.png[]
+
+{blank} +
+
+The configuration showed that the 172.16.12.0/30 network was configured on R2 for *area 5* instead of *area 0*. Swapping this configuration over to the proper area brought up the adjacency immediately. +
+
+image::Images/OSPFv2%20Single%20Area/R1_R2_ADJACENCY_FORMED.png[]
+
+## R1 <> R6 Adjacency
+
+Keen eyes may have noticed that the third octet in the IP addressing for this lab contains the router numbers. So 172.16.12.0 is for R1 and R2, and the R1 <> R6 connection _should_ be 172.16.61.0. +
+If you look back at the previous seciton, R1's configuration had the incorrect network and IP address configured on this connection, and neighboring routers must share a common subnet in order to form a full adjacency.
+
